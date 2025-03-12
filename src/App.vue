@@ -5,23 +5,30 @@
       v-if="gameState === 'waiting'"
       @startGame="startGame"
     />
-
+    
     <!-- 게임 진행 화면 -->
     <PlayPage 
       v-if="gameState === 'playing'"
-      ref="PlayPage"
+      :isInitGrape="isInitGrape"
+      :isTimer="isTimer"
       :score="score" 
       :combo="combo" 
       :remainingTime="remainingTime"
-      @restart-game="gameState='waiting'"
+      @update:score="updateScore"
+      @update:combo="updateCombo"
+      @update:remainingTime="updateRemainingTime"
+      @update:higherCombo="updateHigherCombo"
+      @endGame="endGame"
+      @restart-game="restartGame"
     />
     
     <!-- 종료 화면 -->
-     <FinishPage 
+    <FinishPage 
       v-if="gameState === 'finished'"
       :score="score" 
-      :combo="combo" 
-     />
+      :higherCombo="higherCombo" 
+      @restartGame="restartGame"
+    />
 
   </div>
 </template>
@@ -38,10 +45,13 @@ export default {
       gameState: 'waiting',
       grapes: [],
       selectedGrapes: [],
+      isInitGrape: 0,
       score: 0,
       combo: 0,
       remainingTime: 100,
+      isTimer : 0,
       timer: null,
+      higherCombo: 0,
     }
   },
   components: {
@@ -50,15 +60,32 @@ export default {
     FinishPage,
   },
   methods: {
-
     startGame() {
       this.gameState = 'playing'
-      this.$refs.PlayPage.initializeGrapes()
+      this.isInitGrape = 1
       this.score = 0
       this.combo = 0
       this.remainingTime = 100
-      this.$refs.PlayPage.startTimer()
+      this.isTimer = 1
     },
+    updateScore(newScore) {
+      this.score = newScore;
+    },
+    updateCombo(newCombo) {
+      this.combo = newCombo;
+    },
+    updateRemainingTime(newTime) {
+      this.remainingTime = newTime;
+    },
+    updateHigherCombo(newHigherCombo) {
+      this.higherCombo = newHigherCombo;
+    },
+    endGame() {
+      this.gameState = 'finished';
+    },
+    restartGame() {
+      this.gameState = 'waiting';
+    }
   }
 }
 </script>

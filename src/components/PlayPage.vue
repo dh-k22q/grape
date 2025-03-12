@@ -1,9 +1,9 @@
 <template>
     <div class="playing-screen">
         <div class="game-info">
-        <div class="score">점수: {{ score }}</div>
-        <div class="combo">콤보: {{ combo }}</div>
-        <div class="time">남은 시간: {{ remainingTime }}초</div>
+        <div class="score">점수: {{ localScore }}</div>
+        <div class="combo">콤보: {{ localCombo }}</div>
+        <div class="time">남은 시간: {{ localRemainingTime }}초</div>
         </div>
         
         <div class="grape-container">
@@ -21,13 +21,36 @@
             </div>
         </div>
         </div>
-        <button @click="$emit('restartGame')">다시하기</button>
+        <button @click="$emit('restart-game')">다시하기</button>
+
     </div>
 </template>
 <script>
 export default {
     name: "PlayPageComponent",
-
+    props: {
+        score: Number,
+        combo: Number,
+        remainingTime: Number,
+    },
+    emits: ['update:remainingTime', 'update:combo', 'update:score', 'endGame', 'restart-game'],
+    data() {
+        return {
+            grapes: [],
+            selectedGrapes: [],
+            localScore: this.score,
+            localCombo: this.combo,
+            localRemainingTime: this.remainingTime,
+            higherCombo: 0,
+        }
+    },
+    created() {
+        this.initializeGrapes();
+        this.startTimer();
+    },
+    beforeUnmount() {
+        clearInterval(this.timer);
+    },
     methods: {
     initializeGrapes() {
       this.grapes = []
@@ -60,14 +83,21 @@ export default {
         this.selectedGrapes.forEach(index => {
           this.grapes[index].removed = true
         })
-        this.combo++
-        this.score += Math.pow(2, this.combo - 1)
+        this.localCombo++
+        this.localScore += Math.pow(2, this.localCombo - 1)
+        this.$emit('update:combo', this.localCombo)
+        this.$emit('update:score', this.localScore)
+        
+        if (this.localCombo > this.higherCombo) {
+          this.higherCombo = this.localCombo
+        }
         
         if (this.grapes.every(grape => grape.removed)) {
-          this.endGame()
+          this.$emit('endGame', this.higherCombo)
         }
       } else {
-        this.combo = 0
+        this.localCombo = 0
+        this.$emit('update:combo', this.localCombo)
       }
       
       this.selectedGrapes = []
@@ -75,15 +105,18 @@ export default {
     
     startTimer() {
       this.timer = setInterval(() => {
-        this.remainingTime--
-        if (this.remainingTime <= 0) {
-          this.endGame()
+        this.localRemainingTime--
+        this.$emit('update:remainingTime', this.localRemainingTime)
+        if (this.localRemainingTime <= 0) {
+          this.$emit('endGame', this.higherCombo)
         }
       }, 1000)
     },
 
     endGame() {
       this.gameState = 'finished'
+      console.log(this.higherCombo);
+      this.$emit('update:higherCombo', this.higherCombo)
       clearInterval(this.timer)
     },
 
